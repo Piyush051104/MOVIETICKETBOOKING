@@ -60,3 +60,19 @@ export const getFavorites = async (req, res) =>{
         res.json({ success: false, message: error.message });
     }
 }
+
+export const isAdminEmail = async (req, res) => {
+  try {
+    const { email } = req.body
+    const userList = await clerkClient.users.getUserList()
+    const user = userList.data.find(u =>
+      u.emailAddresses.some(e => e.emailAddress === email)
+    )
+    if (!user) return res.json({ isAdmin: false })
+    const isAdmin = user.privateMetadata?.role === 'admin'
+    res.json({ isAdmin })
+  } catch (error) {
+    console.error(error)
+    res.json({ isAdmin: false })
+  }
+}

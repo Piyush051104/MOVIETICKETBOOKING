@@ -18,8 +18,8 @@ const AddShows = () => {
     const [showPrice, setShowPrice] = useState("");
     const [addingShow, setAddingShow] = useState(false)
 
-
-     const fetchNowPlayingMovies = async () => {
+    
+    const fetchNowPlayingMovies = async () => {
         try {
             const { data } = await axios.get('/api/show/now-playing', {
                 headers: { Authorization: `Bearer ${await getToken()}` }})
