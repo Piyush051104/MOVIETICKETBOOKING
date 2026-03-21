@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import connectDB from './config/db.js';
 import { clerkMiddleware } from '@clerk/express'
 import { serve } from "inngest/express";
@@ -10,9 +12,28 @@ import bookingRouter from './routes/bookingRoutes.js';
 import adminRouter from './routes/adminRoutes.js';
 import userRouter from './routes/userRoutes.js';
 import { stripeWebhooks } from './controllers/stripeWebhooks.js';
+import { initSocket } from './socket.js';
 
 const app = express();
 const port = 3000;
+
+// Create HTTP server and Socket.io server
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: [
+            'http://localhost:5173',
+            'https://movieticketbooking-fro.vercel.app',
+            'https://movieticketbooking-chi.vercel.app',
+            process.env.CLIENT_URL
+        ],
+        methods: ['GET', 'POST'],
+        credentials: true
+    }
+})
+
+// Initialize socket events
+initSocket(io)
 
 await connectDB()
 
@@ -40,4 +61,5 @@ app.use('/api/booking', bookingRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api/user', userRouter)
 
-app.listen(port, () => console.log(`Server listening at http://localhost:${port}`));
+// Use httpServer instead of app.listen
+httpServer.listen(port, () => console.log(`Server listening at http://localhost:${port}`));
