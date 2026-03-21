@@ -17,16 +17,19 @@ import { initSocket } from './socket.js';
 const app = express();
 const port = 3000;
 
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://movieticketbooking-fro.vercel.app',
+    'https://movieticketbooking-chi.vercel.app',
+    'https://quickshow-s.vercel.app',
+    process.env.CLIENT_URL
+]
+
 // Create HTTP server and Socket.io server
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: [
-            'http://localhost:5173',
-            'https://movieticketbooking-fro.vercel.app',
-            'https://movieticketbooking-chi.vercel.app',
-            process.env.CLIENT_URL
-        ],
+        origin: allowedOrigins,
         methods: ['GET', 'POST'],
         credentials: true
     }
@@ -43,12 +46,7 @@ app.use('/api/stripe', express.raw({type: 'application/json'}), stripeWebhooks)
 // Middleware
 app.use(express.json())
 app.use(cors({
-    origin: [
-        'http://localhost:5173',
-        'https://movieticketbooking-fro.vercel.app',
-        'https://movieticketbooking-chi.vercel.app',
-        process.env.CLIENT_URL
-    ],
+    origin: allowedOrigins,
     credentials: true
 }))
 app.use(clerkMiddleware())
