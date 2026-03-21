@@ -24,7 +24,9 @@ app.use(express.json())
 app.use(cors({
     origin: [
         'http://localhost:5173',
-        process.env.CLIENT_URL  // your Vercel URL
+        'https://movieticketbooking-fro.vercel.app',
+        'https://movieticketbooking-chi.vercel.app',
+        process.env.CLIENT_URL
     ],
     credentials: true
 }))
