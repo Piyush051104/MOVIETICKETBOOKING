@@ -16,7 +16,7 @@ import ListShows from './pages/admin/ListShows'
 import ListBookings from './pages/admin/ListBookings'
 import { useAppContext } from './context/AppContext'
 import Loading from './components/Loading'
-import AdminRedirect from './pages/AdminRedirect'
+import AdminRedirect from './pages/Adminredirect'
 
 const App = () => {
 
