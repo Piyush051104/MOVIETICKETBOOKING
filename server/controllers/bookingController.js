@@ -9,7 +9,7 @@ export const createBooking = async (req, res) => {
         const { showId, selectedSeats } = req.body;
         const { origin } = req.headers;
 
-        // Input validation
+       
         if (!showId || !selectedSeats || !Array.isArray(selectedSeats) || selectedSeats.length === 0) {
             return res.status(400).json({ success: false, message: "Invalid input. showId and selectedSeats are required." })
         }
@@ -18,14 +18,14 @@ export const createBooking = async (req, res) => {
             return res.status(400).json({ success: false, message: "You can only book up to 5 seats at a time." })
         }
 
-        // Validate seat format (e.g. A1, B5)
+        
         const seatRegex = /^[A-J](10|[1-9])$/
         const invalidSeats = selectedSeats.filter(seat => !seatRegex.test(seat))
         if (invalidSeats.length > 0) {
             return res.status(400).json({ success: false, message: `Invalid seat format: ${invalidSeats.join(', ')}` })
         }
 
-        // Atomic update — check and lock seats in one operation
+       
         const seatUpdates = {}
         selectedSeats.forEach(seat => {
             seatUpdates[`occupiedSeats.${seat}`] = userId
@@ -46,7 +46,7 @@ export const createBooking = async (req, res) => {
             return res.status(409).json({ success: false, message: "Selected seats are no longer available. Please choose different seats." })
         }
 
-        // Create booking
+       
         const booking = await Booking.create({
             user: userId,
             show: showId,
@@ -54,7 +54,7 @@ export const createBooking = async (req, res) => {
             bookedSeats: selectedSeats
         })
 
-        // Stripe Gateway
+        
         const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
 
         const line_items = [{

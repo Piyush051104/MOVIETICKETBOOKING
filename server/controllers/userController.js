@@ -2,7 +2,7 @@ import { clerkClient } from "@clerk/express";
 import Booking from "../model/Booking.js";
 import Movie from "../model/Movie.js";
 
-// API Controller Function to Get User Bookings
+
 export const getUserBookings = async (req, res) => {
     try {
         const user = req.auth().userId;
@@ -23,7 +23,7 @@ export const getUserBookings = async (req, res) => {
     }
 }
 
-// API Controller Function to update Favorite Movie in Clerk User Metadata
+
 export const updateFavorite = async (req, res) => {
     try {
         const { movieId } = req.body;
@@ -66,7 +66,7 @@ export const getFavorites = async (req, res) => {
     }
 }
 
-// Check if email belongs to an admin — used for forgot password flow
+
 export const isAdminEmail = async (req, res) => {
     try {
         const { email } = req.body

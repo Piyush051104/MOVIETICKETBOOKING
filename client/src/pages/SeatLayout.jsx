@@ -19,14 +19,14 @@ const SeatLayout = () => {
   const [occupiedSeats, setOccupiedSeats] = useState([])
   const [selectingSeats, setSelectingSeats] = useState({})
 
-  // Use refs to always have latest values in event listeners
+  
   const selectedSeatsRef = useRef([])
   const selectedTimeRef = useRef(null)
 
   const navigate = useNavigate()
   const { axios, getToken, user, socket } = useAppContext()
 
-  // Keep refs in sync with state
+
   useEffect(() => {
     selectedSeatsRef.current = selectedSeats
   }, [selectedSeats])
@@ -59,7 +59,7 @@ const SeatLayout = () => {
     }
   }
 
-  // Join socket room when time is selected
+
   useEffect(() => {
     if (!socket || !selectedTime) return
 
@@ -88,8 +88,7 @@ const SeatLayout = () => {
     }
   }, [socket, selectedTime])
 
-  // Release seats ONLY when component unmounts or page closes
-  // Use refs so this doesn't re-run when selectedSeats changes
+  
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (socket && selectedTimeRef.current && selectedSeatsRef.current.length > 0) {
@@ -102,12 +101,12 @@ const SeatLayout = () => {
 
     window.addEventListener('beforeunload', handleBeforeUnload)
 
-    // Cleanup only on unmount
+  
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
-      handleBeforeUnload() // release seats when navigating away
+      handleBeforeUnload() 
     }
-  }, [socket]) // ← only depends on socket, NOT selectedSeats or selectedTime
+  }, [socket])
 
   const handleSeatClick = (seatId) => {
     if (!selectedTime) return toast('Please select time first')

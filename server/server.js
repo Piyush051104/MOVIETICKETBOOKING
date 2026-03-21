@@ -17,7 +17,7 @@ import { initSocket } from './socket.js';
 const app = express();
 const port = 3000;
 
-// Allow all vercel.app subdomains + localhost
+
 const corsOptions = {
     origin: (origin, callback) => {
         if (
@@ -34,7 +34,7 @@ const corsOptions = {
     credentials: true
 }
 
-// Create HTTP server and Socket.io server
+
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
@@ -55,20 +55,20 @@ const io = new Server(httpServer, {
     }
 })
 
-// Initialize socket events
+
 initSocket(io)
 
 await connectDB()
 
-// Stripe Webhooks Route (must be before express.json())
+
 app.use('/api/stripe', express.raw({type: 'application/json'}), stripeWebhooks)
 
-// Middleware
+
 app.use(express.json())
 app.use(cors(corsOptions))
 app.use(clerkMiddleware())
 
-// API Routes
+
 app.get('/', (req, res) => res.send('Server is Live!'))
 app.use('/api/inngest', serve({ client: inngest, functions }))
 app.use('/api/show', showRouter)

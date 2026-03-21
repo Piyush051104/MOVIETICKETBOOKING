@@ -24,7 +24,7 @@ const Navbar = () => {
     }
   }
 
-  // Filter shows for live search suggestions
+  
   const suggestions = searchQuery.trim().length > 0
     ? shows.filter(movie =>
         movie.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -48,7 +48,7 @@ const Navbar = () => {
 
       <div className='flex items-center gap-3'>
 
-        {/* Search Bar */}
+       
         <div className='relative max-md:hidden'>
           {searchOpen ? (
             <form onSubmit={handleSearch} className='flex items-center'>
@@ -65,7 +65,7 @@ const Navbar = () => {
                 onClick={() => { setSearchOpen(false); setSearchQuery('') }}
               />
 
-              {/* Live suggestions dropdown */}
+              
               {suggestions.length > 0 && (
                 <div className='absolute top-10 left-0 w-56 bg-black/90 border border-white/10 rounded-xl overflow-hidden shadow-xl z-50'>
                   {suggestions.map(movie => (

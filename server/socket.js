@@ -1,5 +1,4 @@
 const connectedShows = {}
-// Structure: { showId: { seatId: socketId } }
 
 export const initSocket = (io) => {
 
@@ -20,10 +19,10 @@ export const initSocket = (io) => {
                 connectedShows[showId] = {}
             }
 
-            // Store socket.id instead of userId
+           
             connectedShows[showId][seatId] = socket.id
 
-            // Broadcast to ALL other users
+            
             socket.to(showId).emit('seat-selected', { seatId, socketId: socket.id })
 
             console.log(`Seat ${seatId} selected by ${socket.id} in show ${showId}`)
@@ -53,7 +52,7 @@ export const initSocket = (io) => {
         socket.on('disconnect', () => {
             console.log('User disconnected:', socket.id)
 
-            // Release all seats this socket was holding
+            
             Object.keys(connectedShows).forEach(showId => {
                 const show = connectedShows[showId]
                 Object.keys(show).forEach(seatId => {

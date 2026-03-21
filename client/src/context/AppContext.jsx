@@ -23,7 +23,6 @@ export const AppProvider = ({ children }) => {
     const location = useLocation()
     const navigate = useNavigate()
 
-    // Initialize socket connection
     useEffect(() => {
         const newSocket = io(import.meta.env.VITE_BASE_URL, {
             transports: ['websocket', 'polling'],
@@ -39,7 +38,7 @@ export const AppProvider = ({ children }) => {
 
         setSocket(newSocket)
 
-        // Cleanup on unmount
+       
         return () => {
             newSocket.disconnect()
         }
@@ -101,7 +100,7 @@ export const AppProvider = ({ children }) => {
         fetchIsAdmin,
         user, getToken, navigate, isAdmin, shows,
         favoriteMovies, fetchFavoriteMovies, image_base_url,
-        socket  // expose socket to all components
+        socket  
     }
 
     return (
