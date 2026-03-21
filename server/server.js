@@ -17,19 +17,39 @@ import { initSocket } from './socket.js';
 const app = express();
 const port = 3000;
 
-const allowedOrigins = [
-    'http://localhost:5173',
-    'https://movieticketbooking-fro.vercel.app',
-    'https://movieticketbooking-chi.vercel.app',
-    'https://quickshow-s.vercel.app',
-    process.env.CLIENT_URL
-]
+// Allow all vercel.app subdomains + localhost
+const corsOptions = {
+    origin: (origin, callback) => {
+        if (
+            !origin ||
+            origin === 'http://localhost:5173' ||
+            origin.endsWith('.vercel.app') ||
+            origin === process.env.CLIENT_URL
+        ) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    },
+    credentials: true
+}
 
 // Create HTTP server and Socket.io server
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
-        origin: allowedOrigins,
+        origin: (origin, callback) => {
+            if (
+                !origin ||
+                origin === 'http://localhost:5173' ||
+                origin.endsWith('.vercel.app') ||
+                origin === process.env.CLIENT_URL
+            ) {
+                callback(null, true)
+            } else {
+                callback(new Error('Not allowed by CORS'))
+            }
+        },
         methods: ['GET', 'POST'],
         credentials: true
     }
@@ -45,10 +65,7 @@ app.use('/api/stripe', express.raw({type: 'application/json'}), stripeWebhooks)
 
 // Middleware
 app.use(express.json())
-app.use(cors({
-    origin: allowedOrigins,
-    credentials: true
-}))
+app.use(cors(corsOptions))
 app.use(clerkMiddleware())
 
 // API Routes
@@ -59,5 +76,4 @@ app.use('/api/booking', bookingRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api/user', userRouter)
 
-// Use httpServer instead of app.listen
 httpServer.listen(port, () => console.log(`Server listening at http://localhost:${port}`));
