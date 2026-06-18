@@ -57,7 +57,7 @@ const releaseSeatsAndDeleteBooking = inngest.createFunction(
     {id: 'release-seats-delete-booking'},
     {event: "app/checkpayment"},
     async ({ event, step })=>{
-        const tenMinutesLater = new Date(Date.now() + 10 * 60 * 1000);
+        const tenMinutesLater = new Date(Date.now() + 30 * 60 * 1000);
         await step.sleepUntil('wait-for-10-minutes', tenMinutesLater);
 
         await step.run('check-payment-status', async ()=>{
@@ -139,7 +139,7 @@ const sendShowReminders = inngest.createFunction(
                         userEmail: user.email,
                         userName: user.name,
                         movieTitle: show.movie.title,
-                        showTime: show.showTime,
+                        showTime: show.showDateTime,
                     })
                 }
             }

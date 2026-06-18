@@ -22,6 +22,9 @@ const SeatLayout = () => {
   
   const selectedSeatsRef = useRef([])
   const selectedTimeRef = useRef(null)
+  const seatTimersRef = useRef({}) // seatId -> timeoutId, mirrors the server's Redis TTL
+
+  const SEAT_LOCK_MS = 120000 // must match LOCK_TTL_SECONDS in server/socket.js (120s)
 
   const navigate = useNavigate()
   const { axios, getToken, user, socket } = useAppContext()
@@ -125,9 +128,21 @@ const SeatLayout = () => {
     if (isAlreadySelected) {
       setSelectedSeats(prev => prev.filter(seat => seat !== seatId))
       socket?.emit('deselect-seat', { showId: selectedTime.showId, seatId })
+
+      if (seatTimersRef.current[seatId]) {
+        clearTimeout(seatTimersRef.current[seatId])
+        delete seatTimersRef.current[seatId]
+      }
     } else {
       setSelectedSeats(prev => [...prev, seatId])
       socket?.emit('select-seat', { showId: selectedTime.showId, seatId })
+
+      seatTimersRef.current[seatId] = setTimeout(() => {
+        setSelectedSeats(prev => prev.filter(seat => seat !== seatId))
+        socket?.emit('deselect-seat', { showId: selectedTime.showId, seatId })
+        toast('Seat selection timed out, please select again')
+        delete seatTimersRef.current[seatId]
+      }, SEAT_LOCK_MS)
     }
   }
 
@@ -174,6 +189,9 @@ const SeatLayout = () => {
       )
 
       if (data.success) {
+        Object.values(seatTimersRef.current).forEach(clearTimeout)
+        seatTimersRef.current = {}
+
         socket?.emit('leave-show', {
           showId: selectedTime.showId,
           selectedSeats
@@ -189,6 +207,12 @@ const SeatLayout = () => {
 
   useEffect(() => {
     getShow()
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      Object.values(seatTimersRef.current).forEach(clearTimeout)
+    }
   }, [])
 
   useEffect(() => {
