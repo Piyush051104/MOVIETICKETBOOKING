@@ -288,17 +288,6 @@ Set all environment variables in the respective Vercel project settings, configu
 
 ---
 
-## 🔭 Future Improvements
-
-- Make seat reservation **transactional with payment setup** so a Stripe failure can never leave seats stranded; add a rollback path.
-- Move from an embedded seat map to a **per-seat reservation collection** with a unique index + TTL for high-concurrency flash sales.
-- Add **automated tests** for the booking race and webhook handling, plus **webhook idempotency**.
-- Centralize **error handling** and standardize HTTP status codes across controllers.
-- Add **rate limiting** on auth/booking routes and **authenticate the Socket.io handshake**.
-- Scale the real-time layer with the **Socket.io Redis adapter** for multi-instance broadcasts.
-
----
-
 ## 👤 Author
 
 **Piyush**
