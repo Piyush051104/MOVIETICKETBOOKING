@@ -190,52 +190,6 @@ npm install
 cd ../client
 npm install
 ```
-
----
-
-## 🔐 Environment Variables
-
-**`server/.env`**
-
-```env
-MONGODB_URI=your_mongodb_connection_string         # the database name "quickshow" is appended automatically
-CLIENT_URL=http://localhost:5173
-
-# Clerk
-CLERK_PUBLISHABLE_KEY=pk_...
-CLERK_SECRET_KEY=sk_...
-
-# Stripe
-STRIPE_SECRET_KEY=sk_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-
-# TMDB
-TMDB_API_KEY=your_tmdb_v4_read_access_token
-
-# Upstash Redis
-UPSTASH_REDIS_REST_URL=https://...
-UPSTASH_REDIS_REST_TOKEN=...
-
-# Email (Brevo SMTP)
-SMTP_USER=your_smtp_user
-SMTP_PASS=your_smtp_pass
-SENDER_EMAIL=you@example.com
-
-# Inngest (required in production)
-INNGEST_EVENT_KEY=...
-INNGEST_SIGNING_KEY=...
-```
-
-**`client/.env`**
-
-```env
-VITE_BASE_URL=http://localhost:3000
-VITE_CLERK_PUBLISHABLE_KEY=pk_...
-VITE_TMDB_IMAGE_BASE_URL=https://image.tmdb.org/t/p/original
-```
-
----
-
 ## ▶️ Running Locally
 
 ```bash
