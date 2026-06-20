@@ -1,255 +1,109 @@
-# 🎬 QuickShow — Movie Ticket Booking Platform
-
-A full-stack movie ticket booking application with **real-time collaborative seat selection**, secure **Stripe payments**, and **durable background jobs** for emails and booking lifecycle management. Users browse now-playing movies (sourced from TMDB), pick seats live alongside other users, pay via Stripe Checkout, and receive email confirmations and reminders.
-
-<p align="left">
-  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" />
-  <img alt="Express" src="https://img.shields.io/badge/Express-5-000000?logo=express" />
-  <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white" />
-  <img alt="Socket.io" src="https://img.shields.io/badge/Socket.io-Realtime-010101?logo=socketdotio" />
-  <img alt="Stripe" src="https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe&logoColor=white" />
-</p>
-
+🎬 Quickshow — Real-Time Movie Ticket Booking Platform
+A full-stack movie ticket booking application with live, multi-user seat selection, atomic booking to prevent double-booking, Stripe payments, and event-driven background jobs — built on the MERN stack.
+Live demo: quickshow-s.vercel.app
 ---
-
-## 📌 Summary
-
-QuickShow is a MERN-style monorepo split into a **React + Vite client** and an **Express 5 + MongoDB server**. Its standout feature is a two-layer seat-booking system: **Socket.io + Upstash Redis** provide live "someone is selecting this seat" feedback, while an **atomic MongoDB update** acts as the authoritative guard that prevents double-booking. Authentication is handled by **Clerk**, asynchronous and scheduled work (confirmation emails, reminders, auto-cancellation of unpaid bookings, user sync) runs on **Inngest**, and movie data is pulled from the **TMDB API**.
-
+✨ Features
+🎟️ Browse now-showing movies (synced from TMDB) and view showtimes
+🔴🟡🔵 Real-time seat map — see seats booked (red), being selected by others live (yellow), and your own picks (blue) update instantly via Socket.io
+🔒 Redis-backed seat locking with TTL-based auto-expiry — locks survive server restarts and stay consistent across multiple serverless instances
+🧮 Atomic, race-condition-free booking using MongoDB conditional writes — no two users can ever book the same seat
+💳 Stripe Checkout integration with signature-verified webhooks
+⏱️ Automatic release of unpaid/abandoned bookings after a timeout (Inngest)
+📧 Automated emails — booking confirmation, new-show announcements, and showtime reminders (Nodemailer + Inngest)
+🔐 Authentication via Clerk, with a custom-built admin login flow (email/password + OTP 2FA) and role-based access control
+🛠️ Admin dashboard — add shows, manage listings, view bookings and revenue
 ---
-
-## ✨ Features
-
-- **Movie browsing** — now-playing movies and details sourced from the TMDB API.
-- **Real-time seat selection** — seats other users are choosing light up live via Socket.io, backed by Redis locks with a 120-second TTL.
-- **Concurrency-safe booking** — an atomic `findOneAndUpdate` ensures two users can never book the same seat (the loser gets a clean 409).
-- **Stripe Checkout payments** — hosted checkout with a signed webhook that confirms payment server-side.
-- **Auto-cancellation** — unpaid bookings are released and deleted automatically after the payment window via an Inngest delayed job.
-- **Email notifications** — booking confirmations, new-show announcements, and scheduled show reminders (Brevo SMTP via Nodemailer).
-- **Favorites** — users can favorite movies (stored in Clerk user metadata).
-- **Admin dashboard** — add shows, list shows, view all bookings, and see revenue/booking/user metrics, protected by a role check.
-- **Custom admin auth flow** — password login, email-OTP two-factor, and password reset built on Clerk primitives.
-
+🧱 Tech Stack
+Frontend: React 19, React Router, Tailwind CSS, Socket.io-client, Axios, Clerk React
+Backend: Node.js, Express 5, MongoDB + Mongoose, Socket.io, Redis (Upstash), Clerk Express, Stripe, Inngest, Nodemailer
+Third-party services: Clerk (auth), Stripe (payments), TMDB (movie data), Upstash (Redis), Brevo (SMTP), Inngest Cloud, Vercel (hosting)
 ---
-
-## 🛠 Tech Stack
-
-| Layer | Technologies |
-|-------|--------------|
-| **Frontend** | React 19, Vite, React Router v7, Tailwind CSS v4, Axios, Socket.io-client, React Hot Toast, Lucide React, React Player |
-| **Backend** | Node.js, Express 5, Mongoose 9, Socket.io |
-| **Database** | MongoDB |
-| **Auth** | Clerk (`@clerk/clerk-react`, `@clerk/express`) |
-| **Payments** | Stripe (Checkout + Webhooks) |
-| **Real-time state** | Upstash Redis (`@upstash/redis`) |
-| **Background jobs** | Inngest (events + cron) |
-| **Email** | Nodemailer over Brevo SMTP |
-| **External data** | TMDB API |
-| **Deployment** | Vercel (client and server) |
-
----
-
-## 🏗 Architecture Overview
-
+🏗️ Architecture
 ```
-                 ┌─────────────────────────────────────────┐
-                 │  React Client (Vite, Vercel)             │
-                 │  ClerkProvider → BrowserRouter →         │
-                 │  AppProvider (global context + socket)   │
-                 └───────────┬───────────────┬─────────────┘
-                   REST/axios │               │ websocket
-                              ▼               ▼
-   ┌──────────────────────────────────────────────────────────────┐
-   │  Express 5 API (Vercel @vercel/node)                          │
-   │  Middleware: express.raw (stripe) → express.json → cors →     │
-   │              clerkMiddleware                                  │
-   │  Routes: /api/show /api/booking /api/admin /api/user          │
-   │          /api/stripe (webhook)  /api/inngest (jobs)           │
-   │  Socket server: initSocket(io)                                │
-   └───┬─────────┬───────────┬────────────┬───────────┬───────────┘
-       ▼         ▼           ▼            ▼           ▼
-   ┌────────┐ ┌────────┐ ┌────────┐ ┌─────────┐ ┌──────────┐
-   │MongoDB │ │Upstash │ │ Clerk  │ │ Stripe  │ │ TMDB API │
-   │        │ │ Redis  │ │(auth + │ │(payments│ │ (movies) │
-   │        │ │(seat   │ │ roles) │ │+webhook)│ └──────────┘
-   │        │ │ locks) │ └────────┘ └─────────┘
-   └────────┘ └────────┘
-                          ┌────────────────────────────┐
-                          │ Inngest (background jobs)  │
-                          │ user sync · confirmations  │
-                          │ reminders cron · auto-cancel│──► Brevo SMTP
-                          └────────────────────────────┘
+client/   → React SPA (Vite), deployed independently on Vercel
+server/   → Express API + Socket.io server, deployed independently on Vercel
 ```
-
-**Key design decisions:**
-- **Two-layer concurrency control** — Redis locks drive live UX; a single atomic MongoDB update is the source of truth that prevents double-booking.
-- **Raw-body Stripe webhook mounted before `express.json()`** so signature verification gets the exact bytes.
-- **External IDs as primary keys** — `User._id` is the Clerk id; `Movie._id` is the TMDB id.
-- **Durable async via Inngest** — slow/delayed work (emails, cancellation, reminders) is offloaded with retries instead of blocking requests.
-
+REST API under `/api/show`, `/api/booking`, `/api/admin`, `/api/user`, `/api/stripe`, `/api/inngest`
+Socket.io runs on the same HTTP server as Express, backed by Redis for shared, TTL-expiring seat locks — so live seat selection stays correct even when multiple server instances are running
+MongoDB persists Users, Movies, Shows, and Bookings
+Stripe webhook confirms payment asynchronously; Inngest then sends the confirmation email and keeps Clerk ↔ MongoDB user data in sync
 ---
-
-## 📁 Folder Structure
-
+📂 Project Structure
 ```
-MOVIETICKETBOOKING/
-├── client/                     # React + Vite frontend
-│   └── src/
-│       ├── components/         # Navbar, Footer, MovieCard, admin UI, etc.
-│       ├── context/            # AppContext.jsx (global state + socket)
-│       ├── pages/              # Home, Movies, MovieDetails, SeatLayout, MyBookings…
-│       │   └── admin/          # Dashboard, AddShows, ListShows, ListBookings, Layout
-│       ├── lib/                # date/time/number formatting helpers
-│       ├── App.jsx             # Routes
-│       └── main.jsx            # Providers (Clerk, Router, AppProvider)
-│
-└── server/                     # Express backend
-    ├── config/                 # db.js, redis.js, nodeMailer.js
-    ├── controllers/            # show, booking, admin, user, stripeWebhooks
-    ├── inngest/                # background job definitions
-    ├── middleware/             # auth.js (protectAdmin)
-    ├── model/                  # User, Movie, Show, Booking (Mongoose schemas)
-    ├── routes/                 # show, booking, admin, user routers
-    ├── socket.js               # Socket.io seat-lock handlers
-    └── server.js               # App entry point
+server/
+├── config/         # DB, Redis, Cloudinary, Nodemailer setup
+├── controllers/     # Business logic (booking, show, admin, user)
+├── inngest/          # Background/event-driven functions
+├── middleware/        # Auth middleware (admin protection)
+├── model/              # Mongoose schemas
+├── routes/              # Express route definitions
+├── socket.js              # Real-time seat-selection logic (Socket.io + Redis)
+└── server.js                # App entry point
+
+client/
+└── src/
+    ├── components/   # Reusable UI components (incl. admin/)
+    ├── context/        # Global app state (AppContext)
+    ├── pages/            # Route-level pages (incl. admin/)
+    └── lib/                # Helper utilities
 ```
-
 ---
-
-## 🗄 Database Design
-
-Four Mongoose models:
-
-| Model | Key fields | Notes |
-|-------|-----------|-------|
-| **User** | `_id` (Clerk id), `name`, `email`, `image` | Synced from Clerk via Inngest webhooks |
-| **Movie** | `_id` (TMDB id), `title`, `overview`, `poster_path`, `backdrop_path`, `genres`, `casts`, `vote_average`, `runtime` | Cached from TMDB on first use; `timestamps` |
-| **Show** | `movie` (ref Movie), `showDateTime`, `showPrice`, `occupiedSeats` (`{ seatId: userId }`) | `{ minimize: false }` so the empty seat map persists |
-| **Booking** | `user` (ref User), `show` (ref Show), `amount`, `bookedSeats`, `isPaid`, `paymentLink` | `timestamps` |
-
-**Relationships:** Booking → User, Booking → Show, Show → Movie (string refs, joined with `populate`). Seat occupancy is an embedded map on the Show document, which enables the single-document atomic reservation.
-
----
-
-## 🔌 API Overview
-
-Base path: `/api`
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `GET` | `/show/all` | Public | List upcoming shows (unique movies) |
-| `GET` | `/show/:movieId` | Public | Single movie with grouped show times |
-| `GET` | `/show/now-playing` | Admin | TMDB now-playing list |
-| `POST` | `/show/add` | Admin | Add a movie's shows |
-| `POST` | `/booking/create` | User | Reserve seats + create Stripe Checkout session |
-| `GET` | `/booking/seats/:showId` | User | Occupied seats for a show |
-| `GET` | `/user/bookings` | User | Current user's bookings |
-| `POST` | `/user/update-favorite` | User | Toggle a favorite movie |
-| `GET` | `/user/favorites` | User | List favorite movies |
-| `POST` | `/user/is-admin-email` | Public | Check if an email is an admin |
-| `GET` | `/admin/dashboard` | Admin | Revenue / bookings / shows / users metrics |
-| `GET` | `/admin/all-shows` | Admin | All upcoming shows |
-| `GET` | `/admin/all-bookings` | Admin | All bookings |
-| `POST` | `/stripe` | Stripe | Payment webhook (raw body) |
-| `ANY` | `/inngest` | Inngest | Background-job handler |
-
-Authentication uses Clerk: `requireAuth()` for user routes and a custom `protectAdmin` middleware (checks `privateMetadata.role === 'admin'`) for admin routes.
-
----
-
-## ⚡ Real-Time Features
-
-Live seat selection is powered by **Socket.io** with **Upstash Redis** holding short-lived advisory locks (`lock:<showId>:<seatId>`, TTL 120s).
-
-| Event | Direction | Effect |
-|-------|-----------|--------|
-| `join-show` | client → server | Join a show room; receive current in-progress selections |
-| `select-seat` | client → server | Set a Redis lock; broadcast `seat-selected` to the room |
-| `deselect-seat` | client → server | Release the lock; broadcast `seat-deselected` |
-| `leave-show` | client → server | Release all of the user's locks and leave |
-| `current-selecting` / `seat-selected` / `seat-deselected` | server → client | Drive the live seat UI |
-
-> **Important:** Redis locks are **advisory (UX only)**. The authoritative double-booking prevention is the atomic `Show.findOneAndUpdate` in the booking controller — even if two users race past the live layer, exactly one booking succeeds and the other receives a 409.
-
----
-
-## 🚀 Installation
-
-**Prerequisites:** Node.js 18+, a MongoDB database, and accounts for Clerk, Stripe, Upstash Redis, TMDB, and an SMTP provider (Brevo).
-
+⚙️ Getting Started Locally
+Prerequisites
+Node.js (v18+)
+MongoDB instance (local or Atlas)
+Accounts/API keys for: Clerk, Stripe, TMDB, Upstash Redis, an SMTP provider (e.g. Brevo)
+1. Clone the repo
 ```bash
-# Clone
 git clone https://github.com/Piyush051104/MOVIETICKETBOOKING.git
 cd MOVIETICKETBOOKING
-
-# Install server deps
+```
+2. Backend setup
+```bash
 cd server
 npm install
-
-# Install client deps
+```
+Create a `.env` file inside `server/` with:
+```env
+MONGODB_URI=
+CLERK_SECRET_KEY=
+CLERK_PUBLISHABLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+TMDB_API_KEY=
+SMTP_USER=
+SMTP_PASS=
+SENDER_EMAIL=
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+CLIENT_URL=
+```
+Run the server:
+```bash
+npm run server
+```
+3. Frontend setup
+```bash
 cd ../client
 npm install
 ```
-## ▶️ Running Locally
-
+Create a `.env` file inside `client/` with:
+```env
+VITE_BASE_URL=
+VITE_CLERK_PUBLISHABLE_KEY=
+VITE_CURRENCY=
+VITE_TMDB_IMAGE_BASE_URL=
+```
+Run the client:
 ```bash
-# Terminal 1 — backend (http://localhost:3000)
-cd server
-npm run server        # nodemon; or `npm start` for plain node
-
-# Terminal 2 — frontend (http://localhost:5173)
-cd client
 npm run dev
 ```
-
-**Webhooks during local dev:** forward Stripe events to your local server, e.g.
-
-```bash
-stripe listen --forward-to localhost:3000/api/stripe
-```
-
-and run the Inngest dev server to exercise background jobs locally.
-
+The app should now be running at `http://localhost:5173`, talking to the API at `http://localhost:3000`.
 ---
-
-## ☁️ Deployment
-
-Both apps are configured for **Vercel**:
-- **Client** — `client/vercel.json` rewrites all routes to `/` for SPA routing.
-- **Server** — `server/vercel.json` builds `server.js` with `@vercel/node`.
-
-Set all environment variables in the respective Vercel project settings, configure the Stripe webhook endpoint to point at `/api/stripe`, and register the Inngest app against `/api/inngest`.
-
+🔑 Key Engineering Decisions
+Why Redis for seat locks instead of an in-memory object: the original implementation stored live seat-selection state in a plain in-memory object on the server. This breaks down on serverless platforms like Vercel — each request can be handled by a different, short-lived instance, so state wasn't shared across them and didn't survive restarts. Moving this to Redis, with a TTL on every lock, fixed all three issues: instances now share one source of truth, restarts don't wipe state, and abandoned locks self-expire even if a client disconnects ungracefully — no reliance on the `disconnect` event firing.
+Why booking is atomic: seat reservation uses a single conditional `findOneAndUpdate` (only updates if the seat isn't already taken), making the read-and-write one indivisible operation — eliminating the race condition where two users could both "see" a seat as free and both book it.
+Why background jobs use Inngest, not `setTimeout`/cron: Inngest's durable step functions (e.g. `step.sleepUntil`) survive server restarts, unlike in-process timers — critical for reliably releasing unpaid bookings after a timeout.
 ---
-
-## 🧩 Challenges Faced
-
-- **Preventing double-booking under concurrency** — the core challenge. Solved by making the MongoDB seat write atomic (`$exists:false` conditions on a single document) rather than relying on the real-time layer.
-- **Keeping live seat state consistent** — coordinating Socket.io broadcasts with Redis TTLs and cleaning up locks on disconnect, tab close, and selection timeout.
-- **Verifying payments securely** — wiring the Stripe webhook with raw-body parsing (ahead of `express.json()`) so signatures validate, and confirming payment server-side instead of trusting the client redirect.
-- **Decoupling slow work** — moving emails, reminders, user sync, and unpaid-booking cleanup into Inngest so requests stay fast and the work is retryable.
-- **Networking quirks** — forcing IPv4 (`family: 4`) on the Mongo connection to work around hotspot/IPv6 resolution issues.
-
----
-
-## 🎓 Key Learnings
-
-- The difference between **advisory state (UX)** and an **authoritative source of truth (correctness)** in a concurrent system.
-- How **atomic single-document operations** in MongoDB can replace heavier locking for a well-modeled problem.
-- Designing a **secure payment flow** around webhooks and signature verification.
-- Building a **durable, event-driven background-job layer** with delayed steps and cron schedules.
-- Integrating multiple third-party services (Clerk, Stripe, TMDB, Upstash, Brevo) behind a clean API.
-
----
-
-## 👤 Author
-
-**Piyush**
-- GitHub: [@Piyush051104](https://github.com/Piyush051104)
-- Project: [MOVIETICKETBOOKING](https://quickshow-s.vercel.app/)
-
-
-
----
-
-<sub>Built as a full-stack portfolio project demonstrating real-time systems, payment integration, and event-driven background processing.</sub>
+📄 License
+This project is for educational/portfolio purposes.
