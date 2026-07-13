@@ -17,6 +17,7 @@ import ListBookings from './pages/admin/ListBookings'
 import { useAppContext } from './context/AppContext'
 import Loading from './components/Loading'
 import AdminRedirect from './pages/Adminredirect'
+import AgentChat from './components/AgentChat'
 
 const App = () => {
 
@@ -27,6 +28,7 @@ const App = () => {
     <>
       <Toaster />
       {!isAdminRoute && <Navbar />}
+      {!isAdminRoute && <AgentChat />}
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/movies' element={<Movies />} />

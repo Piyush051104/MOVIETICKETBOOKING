@@ -14,6 +14,8 @@
   "description": "",
   "dependencies": {
     "@clerk/express": "^1.7.73",
+    "@google/genai": "^2.10.0",
+    "@upstash/redis": "^1.38.0",
     "axios": "^1.13.5",
     "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
@@ -24,8 +26,7 @@
     "nodemailer": "^8.0.1",
     "socket.io": "^4.8.3",
     "stripe": "^20.3.1",
-    "svix": "^1.86.0",
-    "@upstash/redis": "^1.38.0"
+    "svix": "^1.86.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
