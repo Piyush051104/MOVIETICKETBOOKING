@@ -154,7 +154,7 @@ async function bookTickets({ showId, seats, userId, origin }) {
 
         return JSON.stringify({ 
             success: true, 
-            message: "Successfully generated checkout link. Present this EXACT link to the user so they can pay.", 
+            message: "Successfully generated checkout link. You MUST present this to the user as a clickable markdown link, e.g. [Click here to pay](URL)", 
             paymentUrl: session.url 
         });
 
