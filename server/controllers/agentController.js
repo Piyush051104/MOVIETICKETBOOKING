@@ -158,8 +158,8 @@ async function bookTickets({ showId, seats, userId, origin }) {
             paymentUrl: session.url 
         });
 
-    } catch (e) {
-        return JSON.stringify({ error: "Failed to create booking or Stripe session." });
+        console.error("Booking Error from AI:", e);
+        return JSON.stringify({ error: `Failed to create booking or Stripe session. Exact error: ${e.message}` });
     }
 }
 
