@@ -123,8 +123,6 @@ const AgentChat = () => {
                       a: ({node, ...props}) => (
                         <a 
                           {...props} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
                           className="text-blue-400 font-semibold underline hover:text-blue-300 break-all" 
                         />
                       ),
