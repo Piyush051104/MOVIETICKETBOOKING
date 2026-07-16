@@ -45,9 +45,17 @@ const AgentChat = () => {
         conversationHistory: history.filter((_, i) => i !== 0) 
       }, { headers });
 
+      let replyText = data.reply;
+      
+      // The AI sometimes forgets to format the URL as a markdown link. 
+      // If it's a raw URL, wrap it in markdown so it becomes clickable!
+      if (replyText.includes('https://checkout.stripe.com') && !replyText.includes('](https://checkout.stripe.com')) {
+          replyText = replyText.replace(/(https:\/\/checkout\.stripe\.com[^\s]+)/g, '[Click here to pay]($1)');
+      }
+
       setHistory([
         ...newHistory,
-        { role: 'model', parts: [{ text: data.reply }] }
+        { role: 'model', parts: [{ text: replyText }] }
       ]);
     } catch (error) {
       console.error(error);
