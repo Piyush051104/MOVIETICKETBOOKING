@@ -157,7 +157,7 @@ async function bookTickets({ showId, seats, userId, origin }) {
             message: "Successfully generated checkout link. You MUST present this to the user as a clickable markdown link, e.g. [Click here to pay](URL)", 
             paymentUrl: session.url 
         });
-
+    } catch (e) {
         console.error("Booking Error from AI:", e);
         return JSON.stringify({ error: `Failed to create booking or Stripe session. Exact error: ${e.message}` });
     }
