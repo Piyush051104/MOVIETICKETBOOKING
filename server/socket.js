@@ -35,7 +35,7 @@ export const initSocket = (io) => {
 
         socket.on('select-seat', async ({ showId, seatId }) => {
             try {
-                await redis.set(lockKey(showId, seatId), socket.id, { ex: LOCK_TTL_SECONDS})
+                await redis.set(lockKey(showId, seatId), socket.id, { ex: LOCK_TTL_SECONDS, nx: true })
                 mySelections.add(`${showId}:${seatId}`)
 
                 socket.to(showId).emit('seat-selected', { seatId, socketId: socket.id })
